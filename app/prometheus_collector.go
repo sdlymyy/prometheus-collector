@@ -17,10 +17,18 @@ type PrometheusCollector struct {
 	PcHttpClient HttpClient
 }
 
+// Wrapper for http client
 type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
+// This func is Gauge func used to set metric value.
+// It does http GET request to required Url and record the Up/Down status and Response time if needed
+// Input: Collector to record the metric
+// Output:
+// 		if not resp time collector: 1 to indicate Get request returns http status code 200
+//									0 to indicate Get request got error or http status code is not 200
+//		if is resp time collector: return resp time in milliseconds
 func (pc *PrometheusCollector) CollectFunc() float64 {
 	start := time.Now()
 	request, err := http.NewRequest(http.MethodGet, pc.Url, nil)
@@ -40,6 +48,10 @@ func (pc *PrometheusCollector) CollectFunc() float64 {
 	}
 }
 
+// This func register the incoming metric
+// Input: Collector we want to register
+// Input: prometheus registry
+// Output: error if any
 func registerCollector(aInCollector PrometheusCollector, aInRegistry *prometheus.Registry) error {
 	if err := aInRegistry.Register(prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{
@@ -56,6 +68,10 @@ func registerCollector(aInCollector PrometheusCollector, aInRegistry *prometheus
 	}
 }
 
+// This func prepare meta of all 4 metrics need to collect, which are:
+// Up/Down status of https://httpstat.us/200 and https://httpstat.us/503
+// Response time of https://httpstat.us/200 and https://httpstat.us/503
+// Output: slice of 4 metric collector
 func initCollectors() []PrometheusCollector {
 	var httpClient HttpClient
 	httpClient = &http.Client{}
@@ -88,6 +104,9 @@ func initCollectors() []PrometheusCollector {
 	return collectors
 }
 
+// This func initialize and register all 4 prometheus metrics
+// Input: prometheus registry used to register metrics
+// Output: error if any
 func initMetrics(aInRegistry *prometheus.Registry) error {
 	collectors := initCollectors()
 	for _, collector := range collectors {
@@ -99,6 +118,7 @@ func initMetrics(aInRegistry *prometheus.Registry) error {
 	return nil
 }
 
+// Entry point
 func main() {
 	r := prometheus.NewRegistry()
 	err := initMetrics(r)

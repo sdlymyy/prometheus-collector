@@ -23,6 +23,8 @@ func TestCollectFunc(t *testing.T) {
 		false,
 		httpClient,
 	}
+
+	// Case 1: Up/Down status check and http status code is 200
 	httpClient.EXPECT().Do(gomock.Any()).Return(&http.Response{
 		StatusCode: http.StatusOK,}, nil).Times(1)
 
@@ -31,6 +33,7 @@ func TestCollectFunc(t *testing.T) {
 		t.Errorf("Return value of CollectFunc() should be 1, but is is %f", result)
 	}
 
+	// Case 2: Up/Down status check and http status code is NOT 200
 	httpClient.EXPECT().Do(gomock.Any()).Return(&http.Response{
 		StatusCode: http.StatusServiceUnavailable,}, nil).Times(1)
 	result = pcCollector.CollectFunc()
@@ -38,6 +41,8 @@ func TestCollectFunc(t *testing.T) {
 		t.Errorf("Return value of CollectFunc() should be 0, but is is %f", result)
 	}
 
+	// Case 2: Simulate the condition that resp time is 1000 milliseconds
+	// So the resp time should between 1000 and 1100 milliseconds(1000 milliseconds sleep time introduced + code runtime)
 	pcCollector.IsRespTimeCollector = true
 	httpClient.EXPECT().Do(gomock.Any()).DoAndReturn(func (req *http.Request) (*http.Response, error) {
 		time.Sleep(time.Millisecond * 1000)
