@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: prometheus-collector
+    tier: frontend
+  name: prometheus-collector
+spec:
+  selector:
+    matchLabels:
+      app: prometheus-collector
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prometheus-collector
+        tier: frontend
+    spec:
+      containers:
+        - name: prometheus-collector
+          image: prometheus_collector:yanyma
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 2112
+              hostPort: 2112
+      terminationGracePeriodSeconds: 30
